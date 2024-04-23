@@ -6,7 +6,7 @@ const userSchema = require('../schema/user.js');
 const groupSchema = require('../schema/group.js');
 const messageSchema = require('../schema/message.js')
 
-// Create a message -> post /message/createmessage
+// Create a message -> Post /message/createmessage
 router.post('/createmessage', fetchUser,
     [
         body('content', 'Content should be atleast of one characters long').isLength({ min: 1 })
@@ -43,7 +43,7 @@ router.post('/createmessage', fetchUser,
             }
             // check if the group is valid
             if (group) {
-                const checkGroup = await groupSchema.findById(receiver)
+                const checkGroup = await groupSchema.findById(group)
                 //if invalid
                 if (!checkGroup) {
                     success = false
@@ -60,8 +60,13 @@ router.post('/createmessage', fetchUser,
                 return res.status(400).send({ success, message: "Please specify the receiver" })
             }
 
+            // if group and receiver are present at once
+            if (group && receiver) {
+                success = false
+                return res.status(400).send({ success, message: "Not allowed" })
+            }
+
             const message = await messageSchema.create({ ...messageData })
-            console.log({ ...messageData });
             success = true
             res.send({
                 success, message: "Message created successfully",
@@ -77,7 +82,7 @@ router.post('/createmessage', fetchUser,
     }
 )
 
-// Delete a message -> /message/deletemessage/:id
+// Delete a message -> Post /message/deletemessage/:id
 router.delete('/deletemessage/:id', fetchUser,
     async (req, res) => {
         let success
@@ -111,6 +116,118 @@ router.delete('/deletemessage/:id', fetchUser,
     }
 )
 
+// Update readby -> Post /messages/messagereadby/:id/:readerid
+router.post('/messagereadby/:id/:readerid', fetchUser,
+    async (req, res) => {
+        let success
+        try {
+            const userId = req.userId
+            const messageId = req.params.id
+            const readerid = req.params.readerid
+
+            // check if the message exist
+            let message = await messageSchema.findById(messageId)
+
+            // if the message doesnot exist
+            if (!message) {
+                success = false
+                return res.status(400).send({ success, message: "Message not found" })
+            }
+
+            // check if the reader exist
+            let checkReader = await userSchema.findById(readerid)
+
+            // if the reader doesnot exist
+            if (!checkReader) {
+                success = false
+                return res.status(400).send({ success, message: "Reader not found" })
+            }
+
+            // if the reader already exist in message's readBy
+            let isReadyBy = false;
+            message.readBy.forEach((e) => {
+                if (e.toString() === readerid) { isReadyBy = true }
+            })
+            if (isReadyBy) {
+                success = false
+                return res.status(400).send({ success, message: "User already read the message" })
+            }
+            // if exist
+            const updatedMessage = await messageSchema.findByIdAndUpdate(messageId, { $set: { readBy: [...message.readBy, readerid] } }, { new: true })
+
+            success = true
+            res.send({
+                success, message: "updated successfully", data: { ...updatedMessage._doc }
+            })
+        }
+        catch (error) {
+            success = false
+            res.status(500).send({ success, message: "Internal server error occurred" })
+        }
+    })
+
+// Get all the group messages -> Get /messages/getgroupmessage/:id
+router.get('/getgroupmessage/:id', fetchUser,
+    async (req, res) => {
+        let success
+        const groupId = req.params.id
+        const userId = req.userId
+        try {
+            // check if the group id is valid
+            const group = await groupSchema.findById(groupId)
+            // console.log(group);
+            // if doesnot exist 
+            if (!group) {
+                success = false
+                return res.status(400).send({ success, message: "Group doesnot exist" })
+            }
+            //if exist
+            const messages = await messageSchema.find({ group: groupId })
+
+            // if no messages available
+            if (!messages) {
+                success = true
+                return res.send({ success, message: "No messages available", data: {} })
+            }
+            // if messages exist
+            success = true
+            res.send({ success, message: "No messages available", data: [...messages] })
+        } catch (error) {
+            success = false
+        }
+    }
+)
+// Get all the personal messages -> Get /messages/getpersonalmessage/:id
+router.get('/getpersonalmessage/:id', fetchUser,
+    async (req, res) => {
+        let success
+        const receiverId = req.params.id
+        const userId = req.userId
+        try {
+            // check if the group id is valid
+            const receiver = await userSchema.findById(receiverId)
+            // console.log(group);
+            // if doesnot exist 
+            if (!receiver) {
+                success = false
+                return res.status(400).send({ success, message: "User doesnot exist" })
+            }
+            //if exist
+            const messages = await messageSchema.find({ sender: userId, receiver: receiverId })
+
+            // if no messages available
+            if (!messages) {
+                success = true
+                return res.send({ success, message: "No messages available", data: {} })
+            }
+            // if messages exist
+            success = true
+            res.send({ success, message: "No messages available", data: [...messages] })
+        } catch (error) {
+            success = false
+        }
+    }
+)
 
 
 module.exports = router

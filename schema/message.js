@@ -13,6 +13,7 @@ const messageSchema = new Schema({
     },
     receiver: {
         type: Schema.Types.ObjectId,
+        
         ref: 'chattila-users'
     },
     group: {
