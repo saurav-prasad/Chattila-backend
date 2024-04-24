@@ -183,8 +183,8 @@ router.get('/getgroupmessage/:id', fetchUser,
             }
             //if exist
             const messages = await messageSchema.find({ group: groupId })
-
             // if no messages available
+
             if (!messages) {
                 success = true
                 return res.send({ success, message: "No messages available", data: {} })
@@ -197,6 +197,7 @@ router.get('/getgroupmessage/:id', fetchUser,
         }
     }
 )
+
 // Get all the personal messages -> Get /messages/getpersonalmessage/:id
 router.get('/getpersonalmessage/:id', fetchUser,
     async (req, res) => {
