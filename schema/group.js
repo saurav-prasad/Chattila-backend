@@ -11,6 +11,12 @@ const groupSchema = new Schema({
             type: mongoose.Types.ObjectId,
             ref: 'chattila-users'
         }
+    ],
+    admin: [
+        {
+            type: mongoose.Types.ObjectId,
+            ref: 'chattila-users'
+        }
     ]
 })
 
