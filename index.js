@@ -26,6 +26,7 @@ app.use(cors())
 app.use('/auth', require('./routes/auth.js'))
 app.use('/group', require('./routes/group.js'))
 app.use('/message', require('./routes/message.js'))
+app.use('/convos',require('./routes/convos.js'))
 
 // server initialization
 server.listen(port, (req, res) => {

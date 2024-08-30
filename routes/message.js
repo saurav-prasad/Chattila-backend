@@ -83,12 +83,13 @@ router.post('/createmessage', fetchUser,
 )
 
 // Delete a message -> Post /message/deletemessage/:id
-router.delete('/deletemessage/:id', fetchUser,
+router.delete('/deletemessage/:messageid', fetchUser,
     async (req, res) => {
+        console.log("object");
         let success
         try {
             const userId = req.userId
-            const messageId = req.params.id
+            const messageId = req.params.messageid
             // check if the message exist
             let message = await messageSchema.findById(messageId)
 
@@ -106,23 +107,25 @@ router.delete('/deletemessage/:id', fetchUser,
 
             // if matches
             message = await messageSchema.findByIdAndDelete(messageId)
+            console.log(message);
             success = true
             res.send({ success, message: "Message deleted successfully" })
 
         } catch (error) {
+            console.log(error);
             success = false
             res.status(500).send({ success, message: "Internal server error occurred" })
         }
     }
 )
 
-// Update readby -> Post /messages/messagereadby/:id/:readerid
-router.post('/messagereadby/:id/:readerid', fetchUser,
+// Update readby -> Post /messages/messagereadby/:messageid/:readerid
+router.post('/messagereadby/:messageid/:readerid', fetchUser,
     async (req, res) => {
         let success
         try {
             const userId = req.userId
-            const messageId = req.params.id
+            const messageId = req.params.messageid
             const readerid = req.params.readerid
 
             // check if the message exist
@@ -166,11 +169,11 @@ router.post('/messagereadby/:id/:readerid', fetchUser,
         }
     })
 
-// Get all the group messages -> Get /messages/getgroupmessage/:id
-router.get('/getgroupmessage/:id', fetchUser,
+// Get all the group messages -> Get /messages/getgroupmessages/:userid
+router.get('/getgroupmessages/:userid', fetchUser,
     async (req, res) => {
         let success
-        const groupId = req.params.id
+        const groupId = req.params.userid
         const userId = req.userId
         try {
             // check if the group id is valid
@@ -198,11 +201,11 @@ router.get('/getgroupmessage/:id', fetchUser,
     }
 )
 
-// Get all the personal messages -> Get /messages/getpersonalmessage/:id
-router.get('/getpersonalmessage/:id', fetchUser,
+// Get all the personal messages -> Get /messages/getpersonalmessages/:userid
+router.get('/getpersonalmessages/:userid', fetchUser,
     async (req, res) => {
         let success
-        const receiverId = req.params.id
+        const receiverId = req.params.userid
         const userId = req.userId
         try {
             // check if the group id is valid

@@ -78,8 +78,8 @@ router.post('/createuser',
         }
     })
 
-// Login a user -> GET /auth/loginuser
-router.get('/loginuser',
+// Login a user -> POST /auth/loginuser
+router.post('/loginuser',
     [
         body('email', 'Please enter a valid email').isEmail(),
         body('password', 'Password should be atleast of 6 characters long').isLength({ min: 6 })
@@ -90,6 +90,8 @@ router.get('/loginuser',
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             success = false
+            console.log(req.body);
+            console.log(errors);
             return res.status(400).send({ message: errors.array()[0].msg, success })
         }
 
@@ -132,6 +134,7 @@ router.get('/loginuser',
         } catch (error) {
             success = false
             res.status(500).send({ message: "Internal server error occured", success })
+            console.log(error);
         }
     })
 

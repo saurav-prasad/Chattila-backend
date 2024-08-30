@@ -6,6 +6,7 @@ const userSchema = require('../schema/user')
 const messageSchema = require('../schema/message')
 const { body, validationResult, check } = require('express-validator')
 const group = require('../schema/group')
+const deleteMessage = require('../controller/deleteMessage.js')
 
 // Create a new group -> POST /group/creategroup
 router.post('/creategroup', fetchUser,
@@ -56,6 +57,12 @@ router.post('/addadmin/:newadminid/:groupid', fetchUser,
         const userId = req.userId
         const newAdminId = req.params.newadminid
         const groupId = req.params.groupid
+
+        // Check if group ID and newadmin ID are provided
+        if (!groupId || !newAdminId) {
+            success = false;
+            return res.status(400).send({ success, message: "Group ID and new Admin ID are required" });
+        }
         try {
             // find the group detail from the database
             const group = await groupSchema.findById(groupId)
@@ -312,9 +319,9 @@ router.delete('/deletegroup/:groupid', fetchUser,
             }
 
             // delete all the group messages
-            const deleteResult = await messageSchema.deleteMany({ group: group._id });
+            const deleteResult = await deleteMessage({ group: group._id })
 
-            if (!deleteResult.acknowledged) {
+            if (!deleteResult.success) {
                 success = false
                 return res.status(400).send({ success, message: "Something went wrong" })
             }
