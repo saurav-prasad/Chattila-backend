@@ -13,7 +13,6 @@ const messageSchema = new Schema({
     },
     receiver: {
         type: Schema.Types.ObjectId,
-        
         ref: 'chattila-users'
     },
     group: {
@@ -26,6 +25,10 @@ const messageSchema = new Schema({
             ref: 'chattila-users'
         }
     ],
+    isRead: {
+        type: Boolean,
+        default: false
+    },
     timestamp: {
         type: Date,
         default: () => Date.now()
