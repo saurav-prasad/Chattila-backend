@@ -7,10 +7,8 @@ const port = 5000
 const cors = require('cors');
 const io = new Server(server, {
     cors: {
-        origin: "*",
-        credentials: true,
-        methods: ["GET", "POST"]
-    }
+        origin: "*"
+    },
 })
 
 // Mapping between user IDs and socket IDs
