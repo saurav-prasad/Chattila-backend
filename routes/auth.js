@@ -169,5 +169,34 @@ router.get('/fetchuser', fetchUser,
         }
     })
 
+// Get a user data  -> GET /auth/getuserdata
+router.get('/getuserdata/:id', fetchUser,
+    async (req, res) => {
+        try {
+            const userId = req.params.id
+
+            // checking the userId
+            const user = await userSchema.findById(userId)
+
+            // if user notfound
+            if (!user) {
+                success = false
+                return res.status(400).send({ message: "Something went wrong", success })
+            }
+
+            success = true
+            res.send({
+                success, message: "User found", data: {
+                    username: user.username,
+                    id: user._id,
+                    profilePhoto: user.profilePhoto,
+                }
+            });
+        } catch (error) {
+            success = false
+            res.status(500).send({ message: "Internal server error occured", success })
+        }
+    })
+
 
 module.exports = router
