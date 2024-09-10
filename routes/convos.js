@@ -137,7 +137,7 @@ router.post('/adduser/:id', fetchUser,
             const checkUserToAdd = await userSchema.findById(userIdToAdd)
             if (!checkUserToAdd) {
                 success = false
-                return res.status(400).send({ success , message: "Please provide a valid userid to add" })
+                return res.status(400).send({ success, message: "Please provide a valid userid to add" })
             }
 
             // check if the user already exist in convos 
@@ -170,5 +170,43 @@ router.post('/adduser/:id', fetchUser,
         }
     }
 )
-    
+
+// Fetch user's convos => Get /convos/fetchconvos
+router.get('/fetchconvos', fetchUser,
+    async (req, res) => {
+        let success
+        const userId = req.userId
+        // check if the user is present 
+        if (!userId) {
+            success = false
+            return res.status(400).send({ success, message: "Something wrong happened!" })
+        }
+        try {
+            // check if the userid is valid
+            const checkUser = await userSchema.findById(userId)
+            if (!checkUser) {
+                success = false
+                return res.status(400).send({ success, message: "Invalid access!" })
+            }
+
+            // Update conversations to add the user to the peoples array if not already present
+            const fetchedConvos = await convosSchema.findOne(
+                { user: userId }
+            );
+            // console.log(fetchedConvos);
+
+            success = true
+            res.send({
+                success, message: "Convos found successfully", data: {
+                    ...fetchedConvos._doc
+                }
+            })
+        } catch (error) {
+            console.log(error);
+            success = false
+            res.status(500).send({ success, message: "Internal server error occurred" })
+        }
+    }
+)
+
 module.exports = router

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router()
 const userSchema = require('../schema/user');
+const convosSchema = require('../schema/convos.js')
 const { body, validationResult } = require('express-validator');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken')
@@ -55,6 +56,13 @@ router.post('/createuser',
                 password: hashedPassword,
                 username,
                 profilePhoto: `https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`,
+            })
+
+            // adding the user convos to the database
+            const convos = await convosSchema.create({
+                user: newUser._id,
+                groups: [],
+                peoples: []
             })
 
             // generate token
@@ -198,5 +206,38 @@ router.get('/getuserdata/:id', fetchUser,
         }
     })
 
+// Fetch a user using auth-token -> GET /auth/fetchuser
+router.get('/getallusers', fetchUser,
+    async (req, res) => {
+        try {
+            let userId = req.userId;
+
+            // checking the userId
+            const user = await userSchema.findById(userId)
+
+            // if user notfound
+            if (!user) {
+                success = false
+                return res.status(400).send({ message: "Something went wrong", success })
+            }
+
+            // fetch all the users from the database
+            const allUsers = await userSchema.find()
+            const filteredUsers = allUsers.map(item => {
+                return {
+                    'username': item?.username,
+                    'profilePhoto': item?.profilePhoto,
+                    'id': item?.id
+                }
+            })
+
+            success = true
+            res.send({ success, message: "all users fetched successfully", data: filteredUsers })
+
+        } catch (error) {
+            success = false
+            res.status(500).send({ message: "Internal server error occured", success })
+        }
+    })
 
 module.exports = router
