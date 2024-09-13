@@ -60,6 +60,12 @@ router.post('/createmessage', fetchUser,
                 return res.status(400).send({ success, message: "Please specify the receiver" })
             }
 
+            // if sender and receiver are the same
+            if (userId == receiver) {
+                success = false
+                return res.status(400).send({ success, message: "Not Allowed" })
+            }
+
             // if group and receiver are present at once
             if (group && receiver) {
                 success = false
@@ -170,10 +176,10 @@ router.post('/messagereadby/:messageid/:readerid', fetchUser,
     })
 
 // Get all the group messages -> Get /messages/getgroupmessages/:userid
-router.get('/getgroupmessages/:userid', fetchUser,
+router.get('/getgroupmessages/:groupid', fetchUser,
     async (req, res) => {
         let success
-        const groupId = req.params.userid
+        const groupId = req.params.groupid
         const userId = req.userId
         try {
             // check if the group id is valid
@@ -217,16 +223,27 @@ router.get('/getpersonalmessages/:userid', fetchUser,
                 return res.status(400).send({ success, message: "User doesnot exist" })
             }
             //if exist
-            const messages = await messageSchema.find({ sender: userId, receiver: receiverId })
+            let messages = await messageSchema.find({ sender: userId, receiver: receiverId })
+            // console.log(messages);
 
             // if no messages available
-            if (!messages) {
+            if (messages.length === 0) {
+                let flag = true
+                const checkMessages = await messageSchema.find({ sender: receiverId, receiver: userId })
+
+                if (checkMessages.length === 0) {
+                    flag = false
+                }
+
                 success = true
-                return res.send({ success, message: "No messages available", data: {} })
+                return flag ? res.send({ success, message: "Messages available", data: [...checkMessages] }) :
+                    res.send({ success, message: "No messages available", data: [] })
+
             }
+
             // if messages exist
             success = true
-            res.send({ success, message: "No messages available", data: [...messages] })
+            res.send({ success, message: "Messages available", data: [...messages] })
         } catch (error) {
             success = false
         }
