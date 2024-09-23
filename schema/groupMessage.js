@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const { Schema } = require("mongoose");
 
-const messageSchema = new Schema({
+const groupMessageSchema = new Schema({
     content: {
         type: String,
         required: true
@@ -10,10 +10,6 @@ const messageSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'chattila-users',
         required: true
-    },
-    receiver: {
-        type: Schema.Types.ObjectId,
-        ref: 'chattila-users'
     },
     group: {
         type: Schema.Types.ObjectId,
@@ -25,10 +21,6 @@ const messageSchema = new Schema({
             ref: 'chattila-users'
         }
     ],
-    isRead: {
-        type: Boolean,
-        default: false
-    },
     timestamp: {
         type: Date,
         default: () => Date.now(),
@@ -36,4 +28,4 @@ const messageSchema = new Schema({
     },
 })
 
-module.exports = mongoose.model('chattila-message', messageSchema)
+module.exports = mongoose.model('chattila-message', groupMessageSchema)
