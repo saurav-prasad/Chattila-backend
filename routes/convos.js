@@ -63,7 +63,7 @@ router.post('/adduser/:id', fetchUser,
 )
 
 // remove a user from convos => DELTE /convos/removeuser/:id
-router.delete('/removeuser/:id', fetchUser,
+router.post('/removeuser/:id', fetchUser,
     async (req, res) => {
         let success
         const removeUserId = req.params.id
@@ -110,61 +110,6 @@ router.delete('/removeuser/:id', fetchUser,
             })
 
         } catch (error) {
-            success = false
-            res.status(500).send({ success, message: "Internal server error occurred" })
-        }
-    }
-)
-
-// Add a group to convos => POST /convos/addgroup/:id
-router.post('/adduser/:id', fetchUser,
-    async (req, res) => {
-        let success
-        const userId = req.userId
-        const userIdToAdd = req.params.id
-        // check if the userid is present in params
-        if (!userIdToAdd) {
-            success = false
-            return res.status(400).send({ success, message: "Please provide a userid to add" })
-        }
-        // check if the userid and useridToadd is the same
-        if (userIdToAdd.toString() === userId.toString()) {
-            success = false
-            return res.status(400).send({ success, message: "You are trying to add yourself!" })
-        }
-        try {
-            // check if the userid is valid
-            const checkUserToAdd = await userSchema.findById(userIdToAdd)
-            if (!checkUserToAdd) {
-                success = false
-                return res.status(400).send({ success, message: "Please provide a valid userid to add" })
-            }
-
-            // check if the user already exist in convos 
-            const checkConvos = await convosSchema.findOne({ user: userId, peoples: { $in: [checkUserToAdd.id] } });
-            // console.log(checkConvos);
-            if (checkConvos) {
-                success = false
-                return res.status(400).send({ success, message: "Userid is already in the list" })
-            }
-
-            // Update conversations to add the user to the peoples array if not already present
-            const updatedConvos = await convosSchema.findOneAndUpdate(
-                { user: userId },
-                { $addToSet: { peoples: checkUserToAdd.id } },
-                { new: true, upsert: true }
-            );
-
-            // console.log(updatedConvos);
-
-            success = true
-            res.send({
-                success, message: "Userid added successfully", data: {
-                    ...updatedConvos._doc
-                }
-            })
-        } catch (error) {
-            console.log(error);
             success = false
             res.status(500).send({ success, message: "Internal server error occurred" })
         }
