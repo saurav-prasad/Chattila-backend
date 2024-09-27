@@ -147,6 +147,59 @@ router.post('/messagereadby/:messageid/:readerid', fetchUser,
         }
     })
 
+//TODO pending routes
+// Read all the messages -> Post /messages/readallmessages/:readerid
+router.post('/readallmessages/:readerid', fetchUser,
+    async (req, res) => {
+        let success
+        try {
+            const userId = req.userId
+            const messageId = req.params.messageid
+            const readerid = req.params.readerid
+
+            // check if the message exist
+            let message = await messageSchema.findById(messageId)
+
+            // check if the reader exist
+            let checkReader = await userSchema.findById(readerid)
+
+            // if the reader doesnot exist
+            if (!checkReader) {
+                success = false
+                return res.status(400).send({ success, message: "Reader not found" })
+            }
+
+            // if the message doesnot exist
+            if (!message) {
+                success = false
+                return res.status(400).send({ success, message: "Message not found" })
+            }
+            // if readerid is not present in message receiver
+            if (!(message.receiver.toString() === readerid)) {
+                success = false
+                return res.status(400).send({ success, message: "Not allowed" })
+            }
+
+            // if the reader already exist in message
+
+            if (message.isRead) {
+                success = false
+                return res.status(400).send({ success, message: "User already read the message" })
+            }
+
+            // if exist
+            const updatedMessage = await messageSchema.findByIdAndUpdate(messageId, { $set: { readBy: true } }, { new: true })
+
+            success = true
+            res.send({
+                success, message: "updated successfully", data: { ...updatedMessage._doc }
+            })
+        }
+        catch (error) {
+            success = false
+            res.status(500).send({ success, message: "Internal server error occurred" })
+        }
+    })
 
 // Get all the personal messages -> Get /messages/getpersonalmessages/:userid
 router.get('/getmessages/:userid', fetchUser,
@@ -166,7 +219,8 @@ router.get('/getmessages/:userid', fetchUser,
             //if exist
             const messages = await messageSchema.find({ sender: userId, receiver: receiverId })
             const andMessages = await messageSchema.find({ sender: receiverId, receiver: userId })
-            if (!messages && !andMessages) {
+
+            if (messages.length === 0 && andMessages.length === 0) {
                 success = false
                 return res.status(400).send({ success, message: 'No messages found' })
             }
@@ -183,5 +237,54 @@ router.get('/getmessages/:userid', fetchUser,
     }
 )
 
+// Get the last received message -> Get /messages/getlastmessage/:userid
+router.get('/getlastmessage/:userid', fetchUser,
+    async (req, res) => {
+        let success
+        try {
+            const senderId = req.params.userid
+            const receiverId = req.userId
+
+            // if sender and receiver are the same
+            if (senderId === receiverId) {
+                success = false
+                return res.status(400).send({ success, message: "Sender and receiver id cannot be same" })
+            }
+
+            // check if sender exist
+            const ifSenderExist = await userSchema.findById(senderId)
+            // if not exist
+            if (!ifSenderExist) {
+                success = false
+                return res.status(400).send({ success, message: "Sender id is not valid" })
+            }
+
+            // get all the messages with corresponding userids
+            const messages = await messageSchema.find({ sender: senderId, receiver: receiverId })
+            const andMessages = await messageSchema.find({ sender: receiverId, receiver: senderId })
+
+            // if no message exist
+            if (messages.length === 0 && andMessages.length === 0) {
+                success = false
+                return res.status(400).send({ success, message: "No messages found" })
+            }
+            // console.log({ messages: [...messages] });
+            // console.log({ andMessages: [...andMessages] });
+            const allMessages = [...messages, ...andMessages]
+
+            const lastMessage = allMessages.reduce((min, obj) =>
+                new Date(obj.timestamp).getTime() > new Date(min.timestamp).getTime() ? obj : min
+            )
+            // console.log(lastMessage);
+
+            success = true
+            res.send({ success, message: "Last message found", data: { ...lastMessage._doc } })
+        } catch (error) {
+            success = false
+            console.log(error);
+            res.status(500).send({ success, message: 'Internal server error occurred!' })
+        }
+    }
+)
 
 module.exports = router
