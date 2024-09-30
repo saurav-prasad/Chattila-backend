@@ -149,51 +149,35 @@ router.post('/messagereadby/:messageid/:readerid', fetchUser,
 
 //TODO pending routes
 // Read all the messages -> Post /messages/readallmessages/:readerid
-router.post('/readallmessages/:readerid', fetchUser,
+router.post('/readallmessages/:senderid', fetchUser,
     async (req, res) => {
         let success
         try {
             const userId = req.userId
-            const messageId = req.params.messageid
-            const readerid = req.params.readerid
+            const senderId = req.params.senderid
+
+            // check if the readerid and the userid is not equal
+            if (userId === senderId) {
+                success = false
+                return res.status(400).send({ success, message: "You cannot read your own message" })
+            }
 
             // check if the message exist
-            let message = await messageSchema.findById(messageId)
-
-            // check if the reader exist
-            let checkReader = await userSchema.findById(readerid)
-
-            // if the reader doesnot exist
-            if (!checkReader) {
+            //if exist
+            const messages = await messageSchema.find({ sender: senderId, receiver: userId })
+            if (messages.length === 0) {
                 success = false
-                return res.status(400).send({ success, message: "Reader not found" })
+                return res.status(400).send({ success, message: 'No messages found' })
             }
+            console.log(messages);
 
-            // if the message doesnot exist
-            if (!message) {
-                success = false
-                return res.status(400).send({ success, message: "Message not found" })
-            }
-            // if readerid is not present in message receiver
-            if (!(message.receiver.toString() === readerid)) {
-                success = false
-                return res.status(400).send({ success, message: "Not allowed" })
-            }
-
-            // if the reader already exist in message
-
-            if (message.isRead) {
-                success = false
-                return res.status(400).send({ success, message: "User already read the message" })
-            }
-
-            // if exist
-            const updatedMessage = await messageSchema.findByIdAndUpdate(messageId, { $set: { readBy: true } }, { new: true })
+            const isUpdated = await messageSchema.updateMany(
+                { sender: senderId, receiver: userId },
+                { $set: { isRead: true } },
+            )
 
             success = true
-            res.send({
-                success, message: "updated successfully", data: { ...updatedMessage._doc }
-            })
+            res.send({ success, message: 'Readby updated' })
         }
         catch (error) {
             success = false
@@ -266,7 +250,7 @@ router.get('/getlastmessage/:userid', fetchUser,
             // if no message exist
             if (messages.length === 0 && andMessages.length === 0) {
                 success = false
-                return res.status(400).send({ success, message: "No messages found" })
+                return res.send({ success, message: "No messages found", data: '' })
             }
             // console.log({ messages: [...messages] });
             // console.log({ andMessages: [...andMessages] });
